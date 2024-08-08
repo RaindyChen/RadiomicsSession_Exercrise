@@ -28,7 +28,7 @@
 
 
 ## Set working directory
-setwd("/Users/raindy/Documents/GitHub/Exercrise_RadiomicsSession")
+setwd("/Users/raindy/Documents/GitHub/RadiomicsSession_Exercrise")
 
 
 
@@ -116,7 +116,7 @@ R          <- cor(DATAscaled)
 radioHeat(R, diag = FALSE,     # correlation matrix
           threshold = TRUE,    # logical
           threshvalue = .95,   # logical
-          labelsize = .01).    # value for thresholding
+          labelsize = .01)     # value for thresholding
                                # Red indicates a positive correlation above the threshold (>0.95), 
                                # blue indicates a negative correlation below the threshold (<-0.95).
 
@@ -138,20 +138,38 @@ radioHeat(R, diag = FALSE,     # correlation matrix
 
 
 
-
-
+# Through the thresholded correlation heatmap, we noticed that there is quite some redundant information in the data. 
+# Hence, one could consider redundancy-filtering (in Exercris 3) as a preprocessing step. 
+# The goal would be to remove truly redundant features.
 
 #'#############################################################################
 #'#############################################################################
 #' **------------------------------------------------------------------------**
-#' **Exercise 3: Redundancy-filter the correlation matrix**
+#' **Exercise 3: Redundancy-filter the correlation matrix** [DONE]
 #' **------------------------------------------------------------------------**
 
 ## Redundancy filtering
 ## And subsetting data
 ## 124 features remain
-RFs         <- RF(R, t = .95)
-DATAscaledS <- subSet(DATAscaled, RFs)
+RFs         <- RF(R, t = .95)             # R: correlation matrix; t: thresholding value
+DATAscaledS <- subSet(DATAscaled, RFs)    # DataScaledS: data matrix or expressionset; RFs: redundancy-filtered correlation matrix
+
+
+
+
+
+
+#' **---------------Answers to Exercise 3-------------------**
+# The `RF` function removes the minimal number of redundant features, 
+# therefore no pair of features remains with an absolute marginal correlation that equals or exceeds t (0.95).
+# The `subSet` function is a convenience function that subsets the data to those features that were retained after redundancy-filtering.
+
+# Show the number remaining features in the matrix
+dim(RFs)[2] ## 124 features remain
+
+# Actually, these features will still be highly collinear in the sense that they share many high-correlations. 
+# However, they are not redundant from the perspective of the specified argument t (0.95). 
+# The filtered correlation matrix will be the main input for the next step (Exercise 4).
 
 
 
