@@ -176,7 +176,7 @@ dim(RFs)[2] ## 124 features remain
 #'#############################################################################
 #'#############################################################################
 #' **------------------------------------------------------------------------**
-#' **Exercise 4: Find an optimal regularized correlation matrix**
+#' **Exercise 4: Find an optimal regularized correlation matrix** [DONE]
 #' **------------------------------------------------------------------------**
 
 ## Optimal penalty
@@ -186,20 +186,37 @@ OPT <- regcor(DATAscaledS, fold = 5)
 ## Look at optimal penalty-value
 ## Obtain regularized correlation matrix
 ## Conditioning can again be assessed with, e.g., CNplot from rag2ridges
-OPT$optPen
-Re = OPT$optCor
+OPT$optPen       # Optimal penalty parameter
+Re = OPT$optCor  # Correlation estimate under optimal penalty parameter
+
+
+#' **---------------Answers to Exercise 4-------------------**
+## Q: Why should we find an optimal regularized correlation matrix after removing the redundant features?
+
+## After removing the truly redundant features, we apply regularization (i.e., penalization) ensures that the resulting estimate will be numerically stable.
+## This numerical stability is needed for the factor analytic projection.
+## Also, the resulting regularized correlation matrix will be basis for the factor analysis procedure.
+
+
+# The `regcor` function determines the optimal value of the penalty parameter, 
+# by applying the Brent algorithm (1971) to the K-fold cross-validated negative log-likelihood score (using a "regularized ridge estimator" for the correlation matrix). 
+# The search for the optimal value is automatic. The penalty value at which the K-fold cross-validated negative log-likelihood score is minimized is deemed optimal. 
+
+# The output is an object of class `list` (in the upper right corner of Environment), 
+# wit `$optPen` containing the optimal penalty value (0.05595778), 
+# and `$optCor` containing the correlation matrix under the optimal value of the penalty parameter.
 
 
 
 #'#############################################################################
 #'#############################################################################
 #' **------------------------------------------------------------------------**
-#' **Exercise 5: Perform factor analysis on the regularized correlation matrix**
+#' **Exercise 5: Perform factor analysis on the regularized correlation matrix** [DONE]
 #' **------------------------------------------------------------------------**
 
-## Assess dimensionality factor solution
-## 13 considered upper bound
-## Variance explained would suggest 8 factors
+## Assess dimensionality factor solution / Calculate (upper-) bounds to the dimensionality of the latent vector
+## 13 considered upper bound (First.lower-bound)
+## Variance explained would suggest 8 factors (Second.lower-bound)
 dimGB(Re)
 dimVAR(Re, 15, graph = TRUE)
 
@@ -207,8 +224,12 @@ dimVAR(Re, 15, graph = TRUE)
 ## 9th factor seems weak
 ## Will keep solution at 8
 ## ML factor analysis with Varimax rotation
-fito <- mlFA(R = Re, m = 8)
+fito <- mlFA(R = Re, m = 8)                                # mlFA: main function for performing a factor analysis ; R = input (the regularized correlation matrix) ; m = the number of latent meta-features (numeric indicating)
 print(fito$Loadings, digits = 2, cutoff = .3, sort = TRUE)
+
+
+
+
 
 ## Visualizing solution using Dandelion plot
 dandpal <- rev(rainbow(100, start = 0.4, end = 0.6))
@@ -218,6 +239,33 @@ dandelion(fito$Loadings, bound = .3, mcex = c(1,1), palet = dandpal)
 pdf(file = "Dandelion.pdf", width = 11, height = 11)
 dandelion(fito$Loadings, bound = .3, mcex = c(1,1), palet = dandpal)
 dev.off()
+
+
+
+#' **---------------Answers to Exercise 5-------------------**
+# Factor analysis is a technique that assumes that observed variables can be grouped based on their correlation into a lower-dimensional linear combination of latent features. 
+# Hence, a main goal of this technique is to project the information contained in a higher-dimensional observation space onto a lower-dimensional latent meta-feature space. 
+# This projection can be done orthogonally, such that the latent features are uncorrelated with each other.
+# Here, we perform a form of regularized factor analysis, for which one of the main inputs will be our previously obtained regularized correlation matrix.
+
+
+
+# Usually, the dimension of `m` (the number of latent meta-features) will be unknown a priori.
+# Therefore, we precede the factor analysis with the `dimGB` function, which calculates (upper-) bounds to the dimensionality of the latent vector.
+
+# The choice of the number of factors can be further assessed with the `dimVAR` function, 
+# which returns the total cumulative explained variance against the dimension of the factor solution possibly with visualization, 
+# informing if the result of the first bound should be accepted or be treated as an upper-bound.
+
+# In high-dimensional situations, Peeters et al. (2019) suggested that the first reported bound (13) provides a reliable upper-bound to the latent dimension.
+
+
+# The `mlFA` function performs a maximum likelihood factor analysis with an orthogonal simple structure rotation, which returns an object of class `list`. 
+
+# `fito$Loadings` contains a matrix whose elements represent the loadings of the observed features on the latent meta-features, 
+# which may be used to interpret the structure of the factor solution and the possible meaning of the latent meta-features. 
+
+# `fito$Uniqueness` contains a diagonal matrix whose elements represent the unique variances (variance not explain by the model).
 
 
 
