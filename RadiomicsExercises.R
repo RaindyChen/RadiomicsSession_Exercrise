@@ -329,10 +329,26 @@ DF <- facSMC(Re, Lambda); DF      # Re = (regularized) correlation matrix, Lambd
 ###############################################################################
 ###############################################################################
 
+
+#' Our general aim would then be to predict survival probabilities based on the prognostic features available at baseline. 
+#' These prognostic features are our factor scores. 
+#' As the factor scores represent low-dimensional and non-collinear data, we may use standard modeling techniques (Cox proportional hazards model).
+
+
+#' Here we have a right-censored survival (time to event) outcome. 
+#' The response concerns the time from a starting point 𝑡= 0 to an event of interest or to censoring. 
+#' Tied to this response is a status indicator that is 1 when the event of interest has occurred during the study-time, 
+#' and 0 indicates when the event of interest did not occur during the study-time or when the subject was lost to follow-up (right-censoring).
+
+
+#' We will also take interest in comparing the performance of the simple model with the projected data with a popular ML technique often used on radiomics data: random forests. 
+#' The random survival forest is a learning method in which the predictor is an ensemble formed by combining many decision trees over the original observed radiomic features.
+
+
 #'#############################################################################
 #'#############################################################################
 #' **------------------------------------------------------------------------**
-#' **Exercise 8: Concatenate original and projected data**
+#' **Exercise 8: Concatenate original and projected data** [DONE]
 #' **------------------------------------------------------------------------**
 
 ## Combine original (scaled) data with projected meta-features
@@ -345,10 +361,16 @@ DAT     <- cbind(time, Status, DAT)
 
 
 
+#' **---------------Answers to Exercise 8-------------------**
+#' Here we use `cbind` to conveniently column-wise collect all data of interest. 
+#' The data of interest concern the observed radiomic features, the factor scores, as well as the time-to-event data and its associated event-indicator.
+
+
+
 #'#############################################################################
 #'#############################################################################
 #' **------------------------------------------------------------------------**
-#' **Exercise 9: Set up model comparisons**
+#' **Exercise 9: Set up model comparisons** [DONE]
 #' **------------------------------------------------------------------------**
 
 ## Formulating the model formula's
@@ -362,37 +384,86 @@ models <- list("MetaCox" = coxph(FitMetaCox, data = DAT, x = TRUE, y = TRUE),
 
 
 
+#' **---------------Answers to Exercise 9-------------------**
+#' Evaluation metrics used in the comparison
+
+#' 1. Prediction error: Time-dependent Brier score; Can be seen as mean square error of prediction.
+
+#' 2. R^2: Measure of (overall) explained residual variation; Can be calculated from the Brier score.
+
+#' 3. Apparent and calibrated performance: 
+#' Apparent error: prediction error obtained when the data used from training are re-used for validation.
+#' Calibrated error: cross-validated prediction error.
+
+
+
+
 #'#############################################################################
 #'#############################################################################
 #' **------------------------------------------------------------------------**
-#' **Exercise 10: Compare models w.r.t. prediction error**
+#' **Exercise 10: Compare models w.r.t. prediction error** [DONE]
 #' **------------------------------------------------------------------------**
 
 ## Assessing prediction error
 ## Median follow-up time = 25.7
 ## (Averaged) repeated 5-fold cross-validation
 set.seed(446464)
-PredError <- pec(object = models,
-                 formula = Surv(time, Status) ~ 1,
-                 data = DAT,
-                 exact = TRUE,
-                 maxtime = median(time),
-                 cens.model = "marginal",
-                 splitMethod = "cv5",
-                 B = 50,
+PredError <- pec(object = models,                     # list of prediction models
+                 formula = Surv(time, Status) ~ 1,    # censoring model
+                 data = DAT,                          # data frame
+                 exact = TRUE,                        # logical determining time-points per curve estimation 
+                 maxtime = median(time),              # max time for estimating per curve
+                 cens.model = "marginal",             # method estimation inv.prob. censoring weights
+                 splitMethod = "cv5",                 # calibration method
+                 B = 50,                              # number of repeats/cycles
                  verbose = TRUE)
 
 ## Summary results:
 ## Apparent and cross-validated prediction error and R2
-crps(PredError)
+crps(PredError)          # produce a table with apparent and cross-validated errors
 Or2(crps(PredError))
 
+
+#' **---------------Answers to Exercise 10-------------------**
+#' For model evaluation we focus on prediction error, which is a measure of inaccuracy and smaller measures are desired.
+#' We use the time-dependent Brier score (Brier, 1950), which may be seen as a mean square error of prediction. 
+#' It can also be used to calculate a measure of (overall) explained residual variation (𝑅^2).
+#' 
+#' Since we have only one dataset available, so we have to harness ourselves from overoptimistic prediction errors.
+#' Hence, we will use a cross-validated prediction error, with 5-fold cross-validation to this end. 
+
+#' To mitigate the dependency on the random-choice of folds, we repeat the 5-fold cross-validation many times (B = 50) and average the corresponding Brier scores over these repeats. 
+#' This can be conveniently done with the pec function from the pec package.
+
+
+#' Calling the `crps` function will produce a table with apparent and cross-validated errors. 
+#' The apparent error is the prediction error obtained when the data used from training are re-used for validation, which will result in optimistic prediction errors.
+#' And the cross-validation will harness against this overoptimism.
+
+#' The Cox model with the latent features and the random forest with the original observed radiomic features the table will also give apparent and cross-validated errors for a reference model. 
+#' The reference model is the Kaplan-Meier prediction rule, which acts as a null model by ignoring all feature information. One desires a model to do better than the reference model.
+
+
+
+#' Looking at the results, we see that both models do better than the reference model. 
+#' The simple model with the factor-analytic meta-features has a better cross-validated prediction error than the random forest model. 
+
+#' Moreover, it has a much smaller gap between the apparent and cross-validated errors. 
+#' These results are mirrored in the (apparent and cross-validated) residual explained varation which can be obtained with the Or2 function from the source file.
+
+
+
+#'                                BI                  |           R2 
+#'                       Apparent    Cross-validated  | Apparent     Cross-validated 
+#'Reference model          .128          .130              –               -        
+#'FMradio                  .098          `.108`           .236             `.170` 
+#'Random survival forest   .061          .114            .526             .119
 
 
 #'#############################################################################
 #'#############################################################################
 #' **------------------------------------------------------------------------**
-#' **Exercise 11: Visualize the results**
+#' **Exercise 11: Visualize the results** [DONE]
 #' **------------------------------------------------------------------------**
 
 ## Visualize apparent prediction error
@@ -469,8 +540,6 @@ plotR2Table(R2Table, "AE", Xlab = "Time (months)")
 ## Visualize cross-validated residual explained variation 
 plotR2Table(R2Table, "CV", Xlab = "Time (months)")
 dev.off()
-
-
 
 
 ###############################################################################
