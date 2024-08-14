@@ -243,55 +243,81 @@ dev.off()
 
 
 #' **---------------Answers to Exercise 5-------------------**
-# Factor analysis is a technique that assumes that observed variables can be grouped based on their correlation into a lower-dimensional linear combination of latent features. 
-# Hence, a main goal of this technique is to project the information contained in a higher-dimensional observation space onto a lower-dimensional latent meta-feature space. 
-# This projection can be done orthogonally, such that the latent features are uncorrelated with each other.
-# Here, we perform a form of regularized factor analysis, for which one of the main inputs will be our previously obtained regularized correlation matrix.
+#' Factor analysis is a technique that assumes that observed variables can be grouped based on their correlation into a lower-dimensional linear combination of latent features. 
+#' Hence, a main goal of this technique is to project the information contained in a higher-dimensional observation space onto a lower-dimensional latent meta-feature space. 
+#' This projection can be done orthogonally, such that the latent features are uncorrelated with each other.
+#' Here, we perform a form of regularized factor analysis, for which one of the main inputs will be our previously obtained regularized correlation matrix.
 
 
 
-# Usually, the dimension of `m` (the number of latent meta-features) will be unknown a priori.
-# Therefore, we precede the factor analysis with the `dimGB` function, which calculates (upper-) bounds to the dimensionality of the latent vector.
+#' Usually, the dimension of `m` (the number of latent meta-features) will be unknown a priori.
+#' Therefore, we precede the factor analysis with the `dimGB` function, which calculates (upper-) bounds to the dimensionality of the latent vector.
 
-# The choice of the number of factors can be further assessed with the `dimVAR` function, 
-# which returns the total cumulative explained variance against the dimension of the factor solution possibly with visualization, 
-# informing if the result of the first bound should be accepted or be treated as an upper-bound.
+#' The choice of the number of factors can be further assessed with the `dimVAR` function, 
+#' which returns the total cumulative explained variance against the dimension of the factor solution possibly with visualization, 
+#' informing if the result of the first bound should be accepted or be treated as an upper-bound.
 
-# In high-dimensional situations, Peeters et al. (2019) suggested that the first reported bound (13) provides a reliable upper-bound to the latent dimension.
+#' In high-dimensional situations, Peeters et al. (2019) suggested that the first reported bound (13) provides a reliable upper-bound to the latent dimension.
 
 
-# The `mlFA` function performs a maximum likelihood factor analysis with an orthogonal simple structure rotation, which returns an object of class `list`. 
+#' The `mlFA` function performs a maximum likelihood factor analysis with an orthogonal simple structure rotation, which returns an object of class `list`. 
 
-# `fito$Loadings` contains a matrix whose elements represent the loadings of the observed features on the latent meta-features, 
-# which may be used to interpret the structure of the factor solution and the possible meaning of the latent meta-features. 
+#' `fito$Loadings` contains a matrix whose elements represent the loadings of the observed features on the latent meta-features, 
+#' which may be used to interpret the structure of the factor solution and the possible meaning of the latent meta-features. 
 
-# `fito$Uniqueness` contains a diagonal matrix whose elements represent the unique variances (variance not explain by the model).
+#' `fito$Uniqueness` contains a diagonal matrix whose elements represent the unique variances (variance not explain by the model).
 
 
 
 #'#############################################################################
 #'#############################################################################
 #' **------------------------------------------------------------------------**
-#' **Exercise 6: Obtain factor scores**
+#' **Exercise 6: Obtain factor scores** [DONE]
 #' **------------------------------------------------------------------------**
 
 ## Factor scores
 Lambda <- fito$Loadings
 Psi    <- fito$Uniqueness
-Scores <- facScore(DATAscaledS, Lambda, Psi)
+Scores <- facScore(DATAscaledS, Lambda, Psi)       # DATAscaledS = (subsetted) data matrix; Lambda = loading matrix, Psi = uniquenesses matrix
+
+
+
+#' **---------------Answers to Exercise 6-------------------**
+#' Once a factor model is fitted one may desire an estimate of the score each object/individual would obtain on each of the latent factors.
+#' Such scores are referred to as factor scores. These scores can then serve as the low-dimensional and non-collinear input into (standard) prediction procedures.
+
+#' The function returns an object of class `data.frame`. Observations are represented in the rows. Each column represent a latent factor (8 factors in total).
+
 
 
 
 #'#############################################################################
 #'#############################################################################
 #' **------------------------------------------------------------------------**
-#' **Exercise 7: Assess factor scores**
+#' **Exercise 7: Assess factor scores** [DONE]
 #' **------------------------------------------------------------------------**
 
 ## Determinacy factor scores
 ## Highly determinate
-DF <- facSMC(Re, Lambda); DF
+DF <- facSMC(Re, Lambda); DF      # Re = (regularized) correlation matrix, Lambda = loadings matrix
 
+
+
+
+#' **---------------Answers to Exercise 7-------------------**
+#' This step was performed to assess the quality of the factor extraction.
+#' This can be probed through the `squared multiple correlations` between the observed features and the common latent factors. 
+#' It indicates how well a common factor can be predicted by the observed features or, from another perspective, to what extent the factor scores are determinate.
+
+#' 
+#' `facSMC` is a function with which one may evaluate the factor scores,
+#' returning a numeric vector indicating, for each factor, the squared multiple correlation between the observed features and the common latent factor.
+
+#' The closer to unity (1), the better one is able to `uniquely` determine the factor scores. 
+#' And the more useful these scores are in prediction and classification.
+
+#'   Factor1   Factor2   Factor3   Factor4   Factor5   Factor6   Factor7   Factor8 
+#' 0.9904875 0.9841129 0.9863895 0.9616917 0.9709467 0.9465867 0.9456656 0.9467385 
 
 
 
